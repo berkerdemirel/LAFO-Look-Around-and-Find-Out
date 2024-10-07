@@ -8,7 +8,7 @@ sweep:
 
 output_dir: null
 
-data_dir: "../../data/"
+data_dir: "../../../data/"
 
 
 cache_dir: "./cache/"
@@ -23,7 +23,7 @@ job:
 
 device: "cuda:0"
 
-benchmark: "cifar10"
+benchmark: "imagenet"
 
 
 imagenet_cfgs:
@@ -32,7 +32,7 @@ imagenet_cfgs:
   model_name: "resnet50-supcon"
   arch_base: "resnet"
   model_path: "../ckpt/ImageNet_resnet50_supcon.pth"
-  base_dir: ".output/ood_scores"
+  base_dir: "./output/ood_scores"
   num_workers: 2
   num_classes: 1000
   batch_size: 512
@@ -41,10 +41,12 @@ imagenet_cfgs:
 cifar10_cfgs:
   in_dataset: "cifar10"
   out_datasets: ['SVHN', 'iSUN', 'dtd', 'places365']
-  model_name: "resnet18-supcon"
   arch_base: "resnet"
+  model_name: "resnet18-supcon"
   model_path: "../ckpt/CIFAR10_resnet18_supcon.pth"
-  base_dir: ".output/ood_scores"
+  # model_name: "resnet18"
+  # model_path: "../ckpt/CIFAR10_resnet18.pth"
+  base_dir: "./output/ood_scores"
   num_workers: 2
   num_classes: 10
   batch_size: 512

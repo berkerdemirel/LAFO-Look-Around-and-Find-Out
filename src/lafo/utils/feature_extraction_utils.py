@@ -1,5 +1,6 @@
 import os
 import torch
+import torch.nn.functional as F
 import numpy as np
 import torchvision
 from torchvision import transforms
@@ -25,7 +26,7 @@ def vit_features(model, x):
     return x
 
 
-def feature_extract_helper(model, dataloader, feat_dim, in_dataset, model_name, num_classes, device, split):
+def feature_extract_helper(model, dataloader, feat_dim, in_dataset, model_name, num_classes, device, ood_dataset, split):
     torch.manual_seed(1)
     torch.cuda.manual_seed(1)
     np.random.seed(1)
@@ -33,10 +34,11 @@ def feature_extract_helper(model, dataloader, feat_dim, in_dataset, model_name, 
     os.environ["CUDA_VISIBLE_DEVICES"] = device
     model.to(device)
     model.eval()
-
-    cache_dir = f"./cache/{in_dataset}_{split}_{model_name}_in"
-    os.makedirs(cache_dir, exist_ok=True)
-    if not os.path.exists(cache_dir):
+    if ood_dataset:
+        cache_dir = f"cache/{ood_dataset}vs{in_dataset}_{model_name}_out"
+    else:
+        cache_dir = f"./cache/{in_dataset}_{model_name}_in" if split else f"./cache/{in_dataset}_{split}_{model_name}_in"
+    if True: # not os.path.exists(cache_dir):
         os.makedirs(cache_dir, exist_ok=True)
         feat_log = np.memmap(f"{cache_dir}/feat.mmap", dtype=float, mode='w+', shape=(len(dataloader.dataset), feat_dim))
         score_log = np.memmap(f"{cache_dir}/score.mmap", dtype=float, mode='w+', shape=(len(dataloader.dataset), num_classes))
@@ -56,6 +58,10 @@ def feature_extract_helper(model, dataloader, feat_dim, in_dataset, model_name, 
                     out = model.features(inputs)
                 elif model_name == 'vit':
                     out = vit_features(model, inputs)
+                elif model_name == "resnet18":
+                    out = model.penult_feature(inputs)
+                elif model_name == "resnet18-supcon":
+                    out = model.penult_feature(inputs)
                 if len(out.shape) > 2:
                     out = F.adaptive_avg_pool2d(out, 1)
                     out = out.view(out.size(0), -1)
@@ -72,20 +78,20 @@ def feature_extract_helper(model, dataloader, feat_dim, in_dataset, model_name, 
 
 
 
-def feat_extract(cfg, device):
+def feat_extract(cfg, data_dir, device):
     model = get_model(cfg)
     feat_dim = feat_dim_dict[cfg.model_name]
     
     for ood_data_name in cfg.out_datasets:
         val_loader = get_loader_out("../../../data", cfg, ood_data_name)
-        feature_extract_helper(model, val_loader["val_ood_loader"], feat_dim, cfg.in_dataset, cfg.model_name, cfg.num_classes, device, '')
+        feature_extract_helper(model, val_loader["val_ood_loader"], feat_dim, cfg.in_dataset, cfg.model_name, cfg.num_classes, device, ood_data_name, None)
 
-    in_loader_dict = get_loader_in(cfg.data_dir, cfg)
+    in_loader_dict = get_loader_in(data_dir, cfg)
     in_loader_train = in_loader_dict.train_loader
     in_loader_val = in_loader_dict.val_loader
 
-    feature_extract_helper(model, in_loader_train, feat_dim, cfg.in_dataset, cfg.model_name, cfg.num_classes, device, 'train')
-    feature_extract_helper(model, in_loader_val, feat_dim, cfg.in_dataset, cfg.model_name, cfg.num_classes, device, 'val')
+    feature_extract_helper(model, in_loader_train, feat_dim, cfg.in_dataset, cfg.model_name, cfg.num_classes, device, None, 'train')
+    feature_extract_helper(model, in_loader_val, feat_dim, cfg.in_dataset, cfg.model_name, cfg.num_classes, device, None, 'val')
     print("Feature extraction done!")
 
 
@@ -93,7 +99,7 @@ def feat_extract(cfg, device):
 def main(cfg: DictConfig):
     benchmark = cfg.benchmark + "_cfgs"
     
-    feat_extract(cfg[benchmark], cfg.device)
+    feat_extract(cfg[benchmark], cfg.data_dir, cfg.device)
 
 
 if __name__ == "__main__":
