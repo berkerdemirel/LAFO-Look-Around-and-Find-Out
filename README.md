@@ -1,4 +1,4 @@
-# LAFO: Look Around and Find Out
+# LAFO: Look Around and Find Out (WIP)
 
 <p align="center">
     <a href="https://github.com/berkerdemirel/LAFO-Look-Around-and-Find-Out/actions/workflows/test_suite.yml"><img alt="CI" src=https://img.shields.io/github/workflow/status/berkerdemirel/LAFO-Look-Around-and-Find-Out/Test%20Suite/main?label=main%20checks></a>
