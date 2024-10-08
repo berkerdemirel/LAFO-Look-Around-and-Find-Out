@@ -50,3 +50,20 @@ Re-install the project in edit mode:
 ```bash
 pip install -e .[dev]
 ```
+
+## License
+
+This source code is released under the MIT license, included [here](LICENSE).
+
+
+```BibTeX
+@misc{demirel2024lafo,
+      title={Look Around and Find Out: OOD Detection with Relative Angles}, 
+      author={Berker Demirel and Marco Fumero and Francesco Locatello},
+      year={2024},
+      eprint={2410.04525},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2410.04525}, 
+}
+```

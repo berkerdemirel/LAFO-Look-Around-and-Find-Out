@@ -37,7 +37,7 @@ def feature_extract_helper(model, dataloader, feat_dim, in_dataset, model_name, 
     if ood_dataset:
         cache_dir = f"cache/{ood_dataset}vs{in_dataset}_{model_name}_out"
     else:
-        cache_dir = f"./cache/{in_dataset}_{model_name}_in" if split else f"./cache/{in_dataset}_{split}_{model_name}_in"
+        cache_dir = f"./cache/{in_dataset}_{split}_{model_name}_in" if split else f"./cache/{in_dataset}_{model_name}_in"
     if True: # not os.path.exists(cache_dir):
         os.makedirs(cache_dir, exist_ok=True)
         feat_log = np.memmap(f"{cache_dir}/feat.mmap", dtype=float, mode='w+', shape=(len(dataloader.dataset), feat_dim))
