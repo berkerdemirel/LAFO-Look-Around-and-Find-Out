@@ -1,11 +1,6 @@
-import os
-import torch
-import torchvision
-from torchvision import transforms
-from easydict import EasyDict
-from omegaconf import DictConfig
 import hydra
-from lafo.utils.data_utils import get_loader_in, get_loader_out
+import torch
+from omegaconf import DictConfig
 
 
 def res18_loader(cfg: DictConfig) -> torch.nn.Module:
@@ -88,7 +83,7 @@ def main(cfg: DictConfig):
     cfg.benchmark = "imagenet"
 
     model_dict = {"imagenet": ["resnet50", "resnet50-supcon", "vit"], "cifar10": ["resnet18", "resnet18-supcon"]}
-    
+
     for b in model_dict.keys():
         benchmark = b + "_cfgs"
         for model_name in model_dict[b]:

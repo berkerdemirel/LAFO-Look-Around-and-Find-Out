@@ -1,26 +1,30 @@
-import torch.nn as nn
 import math
-import torch.utils.model_zoo as model_zoo
-import torch.nn.functional as F
 
-__all__ = ['ResNet', 'resnet18', 'resnet50', ]
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.utils.model_zoo as model_zoo
+
+__all__ = [
+    "ResNet",
+    "resnet18",
+    "resnet50",
+]
 
 
 normalization = nn.BatchNorm2d
 
 model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
-    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
-    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
-    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
-    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+    "resnet18": "https://download.pytorch.org/models/resnet18-5c106cde.pth",
+    "resnet34": "https://download.pytorch.org/models/resnet34-333f7ec4.pth",
+    "resnet50": "https://download.pytorch.org/models/resnet50-19c8e357.pth",
+    "resnet101": "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth",
+    "resnet152": "https://download.pytorch.org/models/resnet152-b121ed2d.pth",
 }
 
 
 def conv3x3(in_planes, out_planes, stride=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    """3x3 convolution with padding."""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
 class BasicBlock(nn.Module):
@@ -67,14 +71,14 @@ class BasicBlock(nn.Module):
         if self.downsample is not None:
             residual = self.downsample(x)
 
-
         out = out + residual
         if mask is not None:
-            out = out * mask[None,:,None,None]# + self.bn2.bias[None,:,None,None] * (1 - mask[None,:,None,None])
+            out = out * mask[None, :, None, None]  # + self.bn2.bias[None,:,None,None] * (1 - mask[None,:,None,None])
 
         out = self.relu(out)
 
         return out
+
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -83,8 +87,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = normalization(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = normalization(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = normalization(planes * 4)
@@ -116,12 +119,10 @@ class Bottleneck(nn.Module):
 
 
 class AbstractResNet(nn.Module):
-
     def __init__(self, block, layers, num_classes=1000):
         super(AbstractResNet, self).__init__()
         self.inplanes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = normalization(64)
         self.relu = nn.ReLU(inplace=False)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -135,7 +136,7 @@ class AbstractResNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
@@ -144,8 +145,7 @@ class AbstractResNet(nn.Module):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
                 normalization(planes * block.expansion),
             )
 
@@ -176,49 +176,54 @@ class AbstractResNet(nn.Module):
         error_msgs = []
 
         # copy state_dict so _load_from_state_dict can modify it
-        metadata = getattr(state_dict, '_metadata', None)
+        metadata = getattr(state_dict, "_metadata", None)
         state_dict = state_dict.copy()
         if metadata is not None:
             state_dict._metadata = metadata
 
-        def load(module, prefix=''):
+        def load(module, prefix=""):
             local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
             module._load_from_state_dict(
-                state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
+                state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
+            )
             for name, child in module._modules.items():
                 if child is not None:
-                    load(child, prefix + name + '.')
+                    load(child, prefix + name + ".")
 
         load(self)
 
         if strict:
-            error_msg = ''
             if len(unexpected_keys) > 0:
                 error_msgs.insert(
-                    0, 'Unexpected key(s) in state_dict: {}. '.format(
-                        ', '.join('"{}"'.format(k) for k in unexpected_keys)))
+                    0,
+                    "Unexpected key(s) in state_dict: {}. ".format(
+                        ", ".join('"{}"'.format(k) for k in unexpected_keys)
+                    ),
+                )
             if len(missing_keys) > 0:
                 error_msgs.insert(
-                    0, 'Missing key(s) in state_dict: {}. '.format(
-                        ', '.join('"{}"'.format(k) for k in missing_keys)))
+                    0, "Missing key(s) in state_dict: {}. ".format(", ".join('"{}"'.format(k) for k in missing_keys))
+                )
 
         if len(error_msgs) > 0:
-            print('Warning(s) in loading state_dict for {}:\n\t{}'.format(self.__class__.__name__, "\n\t".join(error_msgs)))
+            print(
+                "Warning(s) in loading state_dict for {}:\n\t{}".format(
+                    self.__class__.__name__, "\n\t".join(error_msgs)
+                )
+            )
 
 
 class ResNet(AbstractResNet):
-
     def __init__(self, block, layers, num_classes=1000):
         super(ResNet, self).__init__(block, layers, num_classes)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
         self._initial_weight()
 
-#final fc route by max activation
-class ResNetFcMaxAct(AbstractResNet):
 
+# final fc route by max activation
+class ResNetFcMaxAct(AbstractResNet):
     def __init__(self, block, layers, num_classes=1000):
         super(ResNetFcMaxAct, self).__init__(block, layers, num_classes)
-        self.rfc = RouteFcMaxAct(512 * block.expansion, num_classes)
         self._initial_weight()
 
     def forward(self, x):
@@ -232,14 +237,14 @@ class ResNetFcMaxAct(AbstractResNet):
 def resnet18(pretrained=False, **kwargs):
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
+        model.load_state_dict(model_zoo.load_url(model_urls["resnet18"]))
     return model
 
 
 def resnet50(pretrained=False, **kwargs):
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+        model.load_state_dict(model_zoo.load_url(model_urls["resnet50"]))
     return model
 
 
@@ -252,7 +257,7 @@ class Normalize(nn.Module):
 
 
 class ResNetCifar(AbstractResNet):
-    def __init__(self, block, layers, num_classes=10, method='', p=None, info=None):
+    def __init__(self, block, layers, num_classes=10, method="", p=None, info=None):
         super(ResNetCifar, self).__init__(block, layers, num_classes)
         self.in_planes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
@@ -268,7 +273,7 @@ class ResNetCifar(AbstractResNet):
             nn.Linear(512 * block.expansion, 512 * block.expansion),
             nn.ReLU(inplace=True),
             nn.Linear(512 * block.expansion, 128),
-            Normalize()
+            Normalize(),
         )
         self.fc = nn.Linear(512 * block.expansion, num_classes)
         self.avgpool = nn.AvgPool2d(4, stride=1)
@@ -282,16 +287,11 @@ class ResNetCifar(AbstractResNet):
         out = self.layer4(out)
         return out
 
-
-    def forward(self, x, fc_params=None, out_type='ce'):
+    def forward(self, x, fc_params=None, out_type="ce"):
         feat = self.features(x)
         feat = self.avgpool(feat)
         feat = feat.view(feat.size(0), -1)
-        return {
-            'supcon': self.head(feat),
-            'supce': (self.head(feat), self.fc(feat)),
-            'ce': self.fc(feat)
-        }[out_type]
+        return {"supcon": self.head(feat), "supce": (self.head(feat), self.fc(feat)), "ce": self.fc(feat)}[out_type]
 
     def penult_feature(self, x):
         feat = self.features(x)
@@ -329,16 +329,17 @@ class ResNetCifar(AbstractResNet):
         return out
 
 
-
-from torchvision.models import resnet34
 def resnet18_cifar(**kwargs):
-    return ResNetCifar(BasicBlock, [2,2,2,2], **kwargs)
+    return ResNetCifar(BasicBlock, [2, 2, 2, 2], **kwargs)
+
 
 def resnet34_cifar(**kwargs):
     return ResNetCifar(BasicBlock, [3, 4, 6, 3], **kwargs)
 
+
 def resnet50_cifar(**kwargs):
     return ResNetCifar(Bottleneck, [3, 4, 6, 3], **kwargs)
+
 
 def resnet101_cifar(**kwargs):
     return ResNetCifar(Bottleneck, [3, 4, 23, 3], **kwargs)

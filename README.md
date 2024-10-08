@@ -55,13 +55,13 @@ pip install -e .[dev]
 ## Citation
 ```BibTeX
 @misc{demirel2024lafo,
-      title={Look Around and Find Out: OOD Detection with Relative Angles}, 
+      title={Look Around and Find Out: OOD Detection with Relative Angles},
       author={Berker Demirel and Marco Fumero and Francesco Locatello},
       year={2024},
       eprint={2410.04525},
       archivePrefix={arXiv},
       primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2410.04525}, 
+      url={https://arxiv.org/abs/2410.04525},
 }
 ```
 
@@ -69,4 +69,3 @@ pip install -e .[dev]
 ## License
 
 This source code is released under the MIT license, included [here](LICENSE).
-

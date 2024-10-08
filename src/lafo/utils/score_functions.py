@@ -1,5 +1,5 @@
-import torch
 import numpy as np
+import torch
 import torch.nn.functional as F
 
 
@@ -25,7 +25,6 @@ def LAFO(
             total_size += feats_batch_initial.size(0)
             trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device="cuda")
             for class_id in class_idx:
-
                 logit_diff = max_logits - logits_batch_initial[:, class_id]
                 weight_diff = model.fc.weight[preds_initial] - model.fc.weight[class_id]
                 weight_diff_norm = torch.linalg.norm(weight_diff, dim=1)
@@ -92,7 +91,6 @@ def fDBD(
             total_size += feats_batch_initial.size(0)
             trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device="cuda")
             for class_id in class_idx:
-
                 logit_diff = max_logits - logits_batch_initial[:, class_id]
                 weight_diff = model.fc.weight[preds_initial] - model.fc.weight[class_id]
                 weight_diff_norm = torch.linalg.norm(weight_diff, dim=1)
@@ -120,7 +118,6 @@ def knn_score(
     train_features: torch.Tensor,
     k: int = 50,
 ) -> np.ndarray:
-    
     model.eval()
     all_scores = []
     norm_train_feats = F.normalize(train_features, p=2, dim=1)

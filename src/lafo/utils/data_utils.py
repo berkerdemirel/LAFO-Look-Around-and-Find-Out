@@ -1,11 +1,11 @@
 import os
+
+import hydra
 import torch
 import torchvision
-from torchvision import transforms
 from easydict import EasyDict
 from omegaconf import DictConfig
-import hydra
-
+from torchvision import transforms
 
 transform_dict = {
     "imagenet": {
@@ -136,7 +136,6 @@ def get_loader_out(
     cfg: DictConfig,
     val_dataset_name: str,
 ) -> EasyDict:
-
     if val_dataset_name == "SVHN":
         val_ood_loader = torch.utils.data.DataLoader(
             torchvision.datasets.SVHN(

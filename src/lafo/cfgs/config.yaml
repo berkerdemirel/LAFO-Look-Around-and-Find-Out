@@ -1,3 +1,4 @@
+---
 hydra:
   run:
     dir: .
@@ -29,7 +30,11 @@ use_cache: true
 
 imagenet_cfgs:
   in_dataset: "imagenet"
-  out_datasets: ['iNaturalist', 'SUN', 'Places', 'dtd']
+  out_datasets:
+    - iNaturalist
+    - SUN
+    - Places
+    - dtd
   model_name: "resnet50-supcon"
   arch_base: "resnet"
   model_path: "../ckpt/ImageNet_resnet50_supcon.pth"
@@ -41,12 +46,14 @@ imagenet_cfgs:
 
 cifar10_cfgs:
   in_dataset: "cifar10"
-  out_datasets: ['SVHN', 'iSUN', 'dtd', 'places365']
+  out_datasets:
+    - SVHN
+    - iSUN
+    - dtd
+    - places365
   arch_base: "resnet"
   model_name: "resnet18-supcon"
   model_path: "../ckpt/CIFAR10_resnet18_supcon.pth"
-  # model_name: "resnet18"
-  # model_path: "../ckpt/CIFAR10_resnet18.pth"
   base_dir: "./output/ood_scores"
   num_workers: 2
   num_classes: 10

@@ -1,4 +1,5 @@
 """ResNet in PyTorch.
+
 ImageNet-Style ResNet
 [1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
     Deep Residual Learning for Image Recognition. arXiv:1512.03385
@@ -10,9 +11,9 @@ import torch.nn.functional as F
 
 
 def conv3x3(in_planes, out_planes, stride=1):
-    """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    """3x3 convolution with padding."""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
+
 
 normalization = nn.BatchNorm2d
 
@@ -63,8 +64,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = normalization(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
         self.bn2 = normalization(planes)
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = normalization(planes * 4)
@@ -101,8 +101,7 @@ class ResNet(nn.Module):
     def __init__(self, block, num_blocks, in_channel=3, zero_init_residual=False):
         super(ResNet, self).__init__()
         self.in_planes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=False)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -116,7 +115,7 @@ class ResNet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -136,8 +135,7 @@ class ResNet(nn.Module):
         downsample = None
         if stride != 1 or self.in_planes != planes * block.expansion:
             downsample = nn.Sequential(
-                nn.Conv2d(self.in_planes, planes * block.expansion,
-                          kernel_size=1, stride=stride, bias=False),
+                nn.Conv2d(self.in_planes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
                 normalization(planes * block.expansion),
             )
 
@@ -148,7 +146,6 @@ class ResNet(nn.Module):
             layers.append(block(self.in_planes, planes))
 
         return nn.Sequential(*layers)
-
 
     def forward(self, x, layer=100):
         # out = F.relu(self.bn1(self.conv1(x)))
@@ -179,6 +176,7 @@ class ResNet(nn.Module):
         feat_out = out.view(out.size(0), -1)
         return feat_out, out_list
 
+
 def resnet18(**kwargs):
     return ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
 
@@ -196,15 +194,16 @@ def resnet101(**kwargs):
 
 
 model_dict = {
-    'resnet18': [resnet18, 512],
-    'resnet34': [resnet34, 512],
-    'resnet50': [resnet50, 2048],
-    'resnet101': [resnet101, 2048],
+    "resnet18": [resnet18, 512],
+    "resnet34": [resnet34, 512],
+    "resnet50": [resnet50, 2048],
+    "resnet101": [resnet101, 2048],
 }
 
 
 class LinearBatchNorm(nn.Module):
-    """Implements BatchNorm1d by BatchNorm2d, for SyncBN purpose"""
+    """Implements BatchNorm1d by BatchNorm2d, for SyncBN purpose."""
+
     def __init__(self, dim, affine=True):
         super(LinearBatchNorm, self).__init__()
         self.dim = dim
@@ -218,23 +217,19 @@ class LinearBatchNorm(nn.Module):
 
 
 class SupConResNet(nn.Module):
-    """backbone + projection head"""
-    def __init__(self, name='resnet50', head='mlp', feat_dim=128, num_classes=10):
+    """backbone + projection head."""
+
+    def __init__(self, name="resnet50", head="mlp", feat_dim=128, num_classes=10):
         super(SupConResNet, self).__init__()
         model_fun, dim_in = model_dict[name]
         self.encoder = model_fun()
         self.fc = nn.Linear(dim_in, num_classes)
-        if head == 'linear':
+        if head == "linear":
             self.head = nn.Linear(dim_in, feat_dim)
-        elif head == 'mlp':
-            self.head = nn.Sequential(
-                nn.Linear(dim_in, dim_in),
-                nn.ReLU(inplace=True),
-                nn.Linear(dim_in, feat_dim)
-            )
+        elif head == "mlp":
+            self.head = nn.Sequential(nn.Linear(dim_in, dim_in), nn.ReLU(inplace=True), nn.Linear(dim_in, feat_dim))
         else:
-            raise NotImplementedError(
-                'head not supported: {}'.format(head))
+            raise NotImplementedError("head not supported: {}".format(head))
 
     # def forward(self, x):
     #     feat = self.encoder(x)
@@ -244,15 +239,16 @@ class SupConResNet(nn.Module):
     def forward(self, x):
         feat_out, _ = self.encoder.feature_list(x)
         return self.fc(feat_out)
-    
+
     def feature_list(self, x):
         feat_out, feat_list = self.encoder.feature_list(x)
         return self.fc(feat_out), feat_list
 
 
 class SupCEResNet(nn.Module):
-    """encoder + classifier"""
-    def __init__(self, name='resnet50', num_classes=10):
+    """encoder + classifier."""
+
+    def __init__(self, name="resnet50", num_classes=10):
         super(SupCEResNet, self).__init__()
         model_fun, dim_in = model_dict[name]
         self.encoder = model_fun()

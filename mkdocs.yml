@@ -1,5 +1,5 @@
-site_name: LAFO-Look-Around-and-Find-Out
-site_description: Implementation of LAFO: OOD Detection with Relative Angles
+site_name: "LAFO-Look-Around-and-Find-Out"
+site_description: "Implementation of LAFO: OOD Detection with Relative Angles"
 repo_url: https://github.com/berkerdemirel/LAFO-Look-Around-and-Find-Out
 
 nav:

@@ -6,26 +6,28 @@
 #
 
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.route import *
 
 normalization = nn.BatchNorm2d
+
 
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropRate=0.0):
         super(BasicBlock, self).__init__()
         self.bn1 = normalization(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.droprate = dropRate
+
     def forward(self, x):
         out = self.conv1(self.relu(self.bn1(x)))
         if self.droprate > 0:
             out = F.dropout(out, p=self.droprate, training=self.training)
         return torch.cat([x, out], 1)
+
 
 class BottleneckBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropRate=0.0):
@@ -33,12 +35,11 @@ class BottleneckBlock(nn.Module):
         inter_planes = out_planes * 4
         self.bn1 = normalization(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, inter_planes, kernel_size=1, stride=1,
-                               padding=0, bias=False)
+        self.conv1 = nn.Conv2d(in_planes, inter_planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.bn2 = normalization(inter_planes)
-        self.conv2 = nn.Conv2d(inter_planes, out_planes, kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(inter_planes, out_planes, kernel_size=3, stride=1, padding=1, bias=False)
         self.droprate = dropRate
+
     def forward(self, x):
         out = self.conv1(self.relu(self.bn1(x)))
         if self.droprate > 0:
@@ -48,31 +49,36 @@ class BottleneckBlock(nn.Module):
             out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
         return torch.cat([x, out], 1)
 
+
 class TransitionBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropRate=0.0):
         super(TransitionBlock, self).__init__()
         self.bn1 = normalization(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1,
-                               padding=0, bias=False)
+        self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=1, padding=0, bias=False)
         self.droprate = dropRate
+
     def forward(self, x):
         out = self.conv1(self.relu(self.bn1(x)))
         if self.droprate > 0:
             out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
         return F.avg_pool2d(out, 2)
 
+
 class DenseBlock(nn.Module):
     def __init__(self, nb_layers, in_planes, growth_rate, block, dropRate=0.0):
         super(DenseBlock, self).__init__()
         self.layer = self._make_layer(block, in_planes, growth_rate, nb_layers, dropRate)
+
     def _make_layer(self, block, in_planes, growth_rate, nb_layers, dropRate):
         layers = []
         for i in range(nb_layers):
-            layers.append(block(in_planes+i*growth_rate, growth_rate, dropRate))
+            layers.append(block(in_planes + i * growth_rate, growth_rate, dropRate))
         return nn.Sequential(*layers)
+
     def forward(self, x):
         return self.layer(x)
+
 
 class Normalize(nn.Module):
     def __init__(self):
@@ -81,16 +87,28 @@ class Normalize(nn.Module):
     def forward(self, x):
         return F.normalize(x, dim=-1)
 
+
 class DenseNet3(nn.Module):
-    def __init__(self, depth, num_classes, growth_rate=12,
-                 reduction=0.5, bottleneck=True, dropRate=0.0, normalizer = None,
-                 out_classes = 100, p=None, method=None, info=None):
+    def __init__(
+        self,
+        depth,
+        num_classes,
+        growth_rate=12,
+        reduction=0.5,
+        bottleneck=True,
+        dropRate=0.0,
+        normalizer=None,
+        out_classes=100,
+        p=None,
+        method=None,
+        info=None,
+    ):
         super(DenseNet3, self).__init__()
-        self.method=method
+        self.method = method
         in_planes = 2 * growth_rate
         n = (depth - 4) / 3
-        if bottleneck == True:
-            n = int(n/2)
+        if bottleneck:
+            n = int(n / 2)
             block = BottleneckBlock
         else:
             block = BasicBlock
@@ -98,26 +116,23 @@ class DenseNet3(nn.Module):
         self.conv1 = nn.Conv2d(3, in_planes, kernel_size=3, stride=1, padding=1, bias=False)
         # 1st block
         self.block1 = DenseBlock(n, in_planes, growth_rate, block, dropRate)
-        in_planes = int(in_planes+n*growth_rate)
-        self.trans1 = TransitionBlock(in_planes, int(math.floor(in_planes*reduction)), dropRate=dropRate)
-        in_planes = int(math.floor(in_planes*reduction))
+        in_planes = int(in_planes + n * growth_rate)
+        self.trans1 = TransitionBlock(in_planes, int(math.floor(in_planes * reduction)), dropRate=dropRate)
+        in_planes = int(math.floor(in_planes * reduction))
         # 2nd block
         self.block2 = DenseBlock(n, in_planes, growth_rate, block, dropRate)
-        in_planes = int(in_planes+n*growth_rate)
-        self.trans2 = TransitionBlock(in_planes, int(math.floor(in_planes*reduction)), dropRate=dropRate)
-        in_planes = int(math.floor(in_planes*reduction))
+        in_planes = int(in_planes + n * growth_rate)
+        self.trans2 = TransitionBlock(in_planes, int(math.floor(in_planes * reduction)), dropRate=dropRate)
+        in_planes = int(math.floor(in_planes * reduction))
         # 3rd block
         self.block3 = DenseBlock(n, in_planes, growth_rate, block, dropRate)
-        in_planes = int(in_planes+n*growth_rate)
+        in_planes = int(in_planes + n * growth_rate)
         # global average pooling and classifier
         self.bn1 = normalization(in_planes)
         self.relu = nn.ReLU(inplace=True)
 
         self.head = nn.Sequential(
-            nn.Linear(in_planes, in_planes),
-            nn.ReLU(inplace=True),
-            nn.Linear(in_planes, 128),
-            Normalize()
+            nn.Linear(in_planes, in_planes), nn.ReLU(inplace=True), nn.Linear(in_planes, 128), Normalize()
         )
         self.fc = nn.Linear(in_planes, num_classes)
 
@@ -126,22 +141,18 @@ class DenseNet3(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                m.weight.data.normal_(0, math.sqrt(2. / n))
+                m.weight.data.normal_(0, math.sqrt(2.0 / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
 
-    def forward(self, x, out_type='supcon'):
+    def forward(self, x, out_type="supcon"):
         feat = self.features(x)
         feat = F.avg_pool2d(feat, 8)
         feat = feat.view(-1, self.in_planes)
-        return {
-            'supcon': self.head(feat),
-            'supce': (self.head(feat), self.fc(feat)),
-            'ce': self.fc(feat)
-        }[out_type]
+        return {"supcon": self.head(feat), "supce": (self.head(feat), self.fc(feat)), "ce": self.fc(feat)}[out_type]
 
     def features(self, x):
         if self.normalizer is not None:
@@ -161,9 +172,9 @@ class DenseNet3(nn.Module):
     def feature_list(self, x):
         if self.normalizer is not None:
             x = x.clone()
-            x[:,0,:,:] = (x[:,0,:,:] - self.normalizer.mean[0]) / self.normalizer.std[0]
-            x[:,1,:,:] = (x[:,1,:,:] - self.normalizer.mean[1]) / self.normalizer.std[1]
-            x[:,2,:,:] = (x[:,2,:,:] - self.normalizer.mean[2]) / self.normalizer.std[2]
+            x[:, 0, :, :] = (x[:, 0, :, :] - self.normalizer.mean[0]) / self.normalizer.std[0]
+            x[:, 1, :, :] = (x[:, 1, :, :] - self.normalizer.mean[1]) / self.normalizer.std[1]
+            x[:, 2, :, :] = (x[:, 2, :, :] - self.normalizer.mean[2]) / self.normalizer.std[2]
 
         out_list = []
         out = self.conv1(x)
@@ -183,9 +194,9 @@ class DenseNet3(nn.Module):
     def intermediate_forward(self, x, layer_index):
         if self.normalizer is not None:
             x = x.clone()
-            x[:,0,:,:] = (x[:,0,:,:] - self.normalizer.mean[0]) / self.normalizer.std[0]
-            x[:,1,:,:] = (x[:,1,:,:] - self.normalizer.mean[1]) / self.normalizer.std[1]
-            x[:,2,:,:] = (x[:,2,:,:] - self.normalizer.mean[2]) / self.normalizer.std[2]
+            x[:, 0, :, :] = (x[:, 0, :, :] - self.normalizer.mean[0]) / self.normalizer.std[0]
+            x[:, 1, :, :] = (x[:, 1, :, :] - self.normalizer.mean[1]) / self.normalizer.std[1]
+            x[:, 2, :, :] = (x[:, 2, :, :] - self.normalizer.mean[2]) / self.normalizer.std[2]
 
         out = self.conv1(x)
         if layer_index == 1:
@@ -204,9 +215,9 @@ class DenseNet3(nn.Module):
     def penultimate_forward(self, x):
         if self.normalizer is not None:
             x = x.clone()
-            x[:,0,:,:] = (x[:,0,:,:] - self.normalizer.mean[0]) / self.normalizer.std[0]
-            x[:,1,:,:] = (x[:,1,:,:] - self.normalizer.mean[1]) / self.normalizer.std[1]
-            x[:,2,:,:] = (x[:,2,:,:] - self.normalizer.mean[2]) / self.normalizer.std[2]
+            x[:, 0, :, :] = (x[:, 0, :, :] - self.normalizer.mean[0]) / self.normalizer.std[0]
+            x[:, 1, :, :] = (x[:, 1, :, :] - self.normalizer.mean[1]) / self.normalizer.std[1]
+            x[:, 2, :, :] = (x[:, 2, :, :] - self.normalizer.mean[2]) / self.normalizer.std[2]
 
         out = self.conv1(x)
         out = self.trans1(self.block1(out))
