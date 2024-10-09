@@ -3,8 +3,8 @@ import logging
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
-import omegaconf
 import torch
+from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
 
 from lafo.utils import metrics
@@ -159,7 +159,7 @@ def pipeline(cfg, data_dir, device):
 
 
 @hydra.main(config_path="./cfgs", config_name="config.yaml", version_base="1.2")
-def main(cfg: omegaconf.DictConfig):
+def main(cfg: DictConfig):
     seed_everything(cfg.seed)
     if cfg.use_cache:
         logging.info("Using cached features")

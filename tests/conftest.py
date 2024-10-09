@@ -13,7 +13,7 @@ from pytest import FixtureRequest, TempPathFactory
 
 from nn_core.serialization import NNCheckpointIO
 
-from lafo.run import run
+from lafo.main import main
 
 logging.basicConfig(force=True, level=logging.DEBUG)
 
@@ -122,14 +122,14 @@ def cfg_all(request: FixtureRequest):
     scope="package",
 )
 def run_trainings_not_dry(cfg_all_not_dry: DictConfig) -> str:
-    yield run(cfg=cfg_all_not_dry)
+    yield main(cfg=cfg_all_not_dry)
 
 
 @pytest.fixture(
     scope="package",
 )
 def run_trainings(cfg_all: DictConfig) -> str:
-    yield run(cfg=cfg_all)
+    yield main(cfg=cfg_all)
 
 
 #
