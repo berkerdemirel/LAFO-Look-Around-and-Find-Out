@@ -7,7 +7,7 @@ def res18_loader(cfg: DictConfig) -> torch.nn.Module:
     from lafo.modules.resnet import resnet18_cifar
 
     model = resnet18_cifar(num_classes=cfg.num_classes)
-    checkpoint = torch.load(cfg.model_path)
+    checkpoint = torch.load(cfg.model_path, weights_only=False)
     checkpoint = {"state_dict": {key.replace("module.", ""): value for key, value in checkpoint["state_dict"].items()}}
     model.load_state_dict(checkpoint["state_dict"])
     return model
@@ -17,9 +17,9 @@ def res18_supcon_loader(cfg: DictConfig) -> torch.nn.Module:
     from lafo.modules.resnet_ss import resnet18_cifar
 
     model = resnet18_cifar(num_classes=cfg.num_classes)
-    checkpoint = torch.load(cfg.model_path)
+    checkpoint = torch.load(cfg.model_path, weights_only=False)
     checkpoint = {"state_dict": {key.replace("module.", ""): value for key, value in checkpoint["state_dict"].items()}}
-    checkpoint_linear = torch.load(cfg.model_path[:-4] + "_linear" + cfg.model_path[-4:])
+    checkpoint_linear = torch.load(cfg.model_path[:-4] + "_linear" + cfg.model_path[-4:], weights_only=False)
     checkpoint["state_dict"]["fc.weight"] = checkpoint_linear["model"]["fc.weight"]
     checkpoint["state_dict"]["fc.bias"] = checkpoint_linear["model"]["fc.bias"]
     model.load_state_dict(checkpoint["state_dict"])
@@ -44,9 +44,9 @@ def res50_supcon_loader(cfg: DictConfig) -> torch.nn.Module:
     from lafo.modules.resnet_supcon import SupConResNet
 
     model = SupConResNet(num_classes=cfg.num_classes)
-    checkpoint = torch.load(cfg.model_path)
+    checkpoint = torch.load(cfg.model_path, weights_only=False)
     state_dict = {str.replace(k, "module.", ""): v for k, v in checkpoint["model"].items()}
-    checkpoint_linear = torch.load(cfg.model_path[:-4] + "_linear" + cfg.model_path[-4:])
+    checkpoint_linear = torch.load(cfg.model_path[:-4] + "_linear" + cfg.model_path[-4:], weights_only=False)
     state_dict["fc.weight"] = checkpoint_linear["model"]["fc.weight"]
     state_dict["fc.bias"] = checkpoint_linear["model"]["fc.bias"]
     model.load_state_dict(state_dict)

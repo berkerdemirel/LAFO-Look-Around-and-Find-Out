@@ -36,7 +36,7 @@ def feature_extract_helper(
     model.to(device)
     model.eval()
     if ood_dataset:
-        cache_dir = f"cache/{ood_dataset}vs{in_dataset}_{model_name}_out"
+        cache_dir = f"./cache/{ood_dataset}vs{in_dataset}_{model_name}_out"
     else:
         cache_dir = (
             f"./cache/{in_dataset}_{split}_{model_name}_in" if split else f"./cache/{in_dataset}_{model_name}_in"
@@ -52,12 +52,13 @@ def feature_extract_helper(
         label_log = np.memmap(f"{cache_dir}/label.mmap", dtype=float, mode="w+", shape=(len(dataloader.dataset),))
 
         with torch.no_grad():
+            start_ind = 0
             for batch_idx, (inputs, targets) in enumerate(dataloader):
                 B, C, H, W = inputs.size()
                 inputs, targets = inputs.to(device), targets.to(device)
-                start_ind = batch_idx * B
-                end_ind = min((batch_idx + 1) * B, len(dataloader.dataset))
-
+                # start_ind = batch_idx * B
+                # end_ind = min((batch_idx + 1) * B, len(dataloader.dataset))
+                end_ind = start_ind + B
                 if model_name == "resnet50-supcon":
                     out = model.encoder(inputs)
                 elif model_name == "resnet50":
@@ -75,6 +76,7 @@ def feature_extract_helper(
                 feat_log[start_ind:end_ind, :] = out.data.cpu().numpy()
                 label_log[start_ind:end_ind] = targets.data.cpu().numpy()
                 score_log[start_ind:end_ind] = score.data.cpu().numpy()
+                start_ind = end_ind
                 if batch_idx % 100 == 0:
                     print(f"{batch_idx}/{len(dataloader)}")
     else:
@@ -90,7 +92,7 @@ def feat_extract(cfg, data_dir, device):
     feat_dim = feat_dim_dict[cfg.model_name]
 
     for ood_data_name in cfg.out_datasets:
-        val_loader = get_loader_out("../../../data", cfg, ood_data_name)
+        val_loader = get_loader_out(data_dir, cfg, ood_data_name)
         feature_extract_helper(
             model,
             val_loader["val_ood_loader"],
