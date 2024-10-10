@@ -6,6 +6,9 @@ from omegaconf import DictConfig
 def res18_loader(model_path: str, num_classes: int) -> torch.nn.Module:
     from lafo.modules.resnet import resnet18_cifar
 
+    if model_path is None:
+        return resnet18_cifar(num_classes=num_classes)
+
     model = resnet18_cifar(num_classes=num_classes)
     checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
     checkpoint = {"state_dict": {key.replace("module.", ""): value for key, value in checkpoint["state_dict"].items()}}
@@ -16,9 +19,13 @@ def res18_loader(model_path: str, num_classes: int) -> torch.nn.Module:
 def res18_supcon_loader(model_path: str, num_classes: int) -> torch.nn.Module:
     from lafo.modules.resnet_ss import resnet18_cifar
 
+    if model_path is None:
+        return resnet18_cifar(num_classes=num_classes)
+
     model = resnet18_cifar(num_classes=num_classes)
     checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
     checkpoint = {"state_dict": {key.replace("module.", ""): value for key, value in checkpoint["state_dict"].items()}}
+
     checkpoint_linear = torch.load(
         model_path[:-4] + "_linear" + model_path[-4:], map_location="cpu", weights_only=False
     )
@@ -45,6 +52,8 @@ def res50_loader(num_classes: int) -> torch.nn.Module:
 def res50_supcon_loader(model_path: str, num_classes: int) -> torch.nn.Module:
     from lafo.modules.resnet_supcon import SupConResNet
 
+    if model_path is None:
+        return SupConResNet(num_classes=num_classes)
     model = SupConResNet(num_classes=num_classes)
     checkpoint = torch.load(model_path, map_location="cpu", weights_only=False)
     state_dict = {str.replace(k, "module.", ""): v for k, v in checkpoint["model"].items()}

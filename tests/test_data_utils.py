@@ -1,6 +1,11 @@
+import os
+
+import pytest
 import torch
 
 from lafo.utils.data_utils import get_loader_in, get_loader_out
+
+is_github_actions = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 def test_get_loader_in_cifar10():
@@ -20,6 +25,7 @@ def test_get_loader_in_cifar10():
     assert len(loaders.val_loader.dataset) == 10000, "Validation dataset size is incorrect"
 
 
+@pytest.mark.skipif(is_github_actions, reason="Skipping test that requires data folder in GitHub Actions")
 def test_get_loader_in_imagenet():
     root_dir = "./data"
     in_dataset = "imagenet"
@@ -58,6 +64,7 @@ def test_get_loader_out_svhn():
     assert len(loaders.val_ood_loader.dataset) == 26032, "OOD validation dataset size is incorrect"
 
 
+@pytest.mark.skipif(is_github_actions, reason="Skipping test that requires data folder in GitHub Actions")
 def test_get_loader_out_dtd():
     root_dir = "./data"
     in_dataset = "cifar10"
