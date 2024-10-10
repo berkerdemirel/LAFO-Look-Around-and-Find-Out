@@ -22,7 +22,7 @@ job:
 
 device: "cuda:0"
 
-benchmark: "cifar10"
+benchmark: "imagenet"
 use_cache: true
 
 

@@ -113,7 +113,7 @@ hydra:
     - hydra.mode=RUN
     task: []
   job:
-    name: feature_extraction_utils
+    name: model_utils
     chdir: null
     override_dirname: ''
     id: ???

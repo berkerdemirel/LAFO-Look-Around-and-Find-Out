@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from omegaconf import DictConfig
 
 from lafo.utils.data_utils import get_loader_in, get_loader_out
-from lafo.utils.load_model import get_model
+from lafo.utils.model_utils import get_model
 
 feat_dim_dict = {"resnet50": 2048, "resnet50-supcon": 2048, "vit": 768, "resnet18": 512, "resnet18-supcon": 512}
 
@@ -88,11 +88,18 @@ def feature_extract_helper(
 
 
 def feat_extract(cfg, data_dir, device):
-    model = get_model(cfg)
+    model = get_model(cfg.in_dataset, cfg.model_name, cfg.model_path, cfg.num_classes)
     feat_dim = feat_dim_dict[cfg.model_name]
 
     for ood_data_name in cfg.out_datasets:
-        val_loader = get_loader_out(data_dir, cfg, ood_data_name)
+        val_loader = get_loader_out(
+            root_dir=data_dir,
+            val_dataset_name=ood_data_name,
+            in_dataset=cfg.in_dataset,
+            arch_base=cfg.arch_base,
+            batch_size=cfg.batch_size,
+            num_workers=cfg.num_workers,
+        )
         feature_extract_helper(
             model,
             val_loader["val_ood_loader"],
@@ -105,7 +112,13 @@ def feat_extract(cfg, data_dir, device):
             None,
         )
 
-    in_loader_dict = get_loader_in(data_dir, cfg)
+    in_loader_dict = get_loader_in(
+        root_dir=data_dir,
+        in_dataset=cfg.in_dataset,
+        arch_base=cfg.arch_base,
+        batch_size=cfg.batch_size,
+        num_workers=cfg.num_workers,
+    )
     in_loader_train = in_loader_dict.train_loader
     in_loader_val = in_loader_dict.val_loader
 

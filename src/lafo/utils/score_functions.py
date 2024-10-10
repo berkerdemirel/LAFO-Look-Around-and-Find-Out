@@ -1,6 +1,23 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn.functional as F
+
+
+def LAFO(
+    model: torch.nn.Module,
+    test_loader: torch.utils.data.DataLoader,
+    num_classes: int,
+    class_means: torch.Tensor,
+    use_cache: bool = False,
+    device: Optional[str] = None,
+) -> np.ndarray:
+    device = device if device else "cpu"
+    if use_cache:
+        return LAFO_cache(model, test_loader, num_classes, class_means, device)
+    else:
+        return LAFO_no_cache(model, test_loader, num_classes, class_means, device)
 
 
 def LAFO_cache(
@@ -8,7 +25,9 @@ def LAFO_cache(
     test_loader: torch.utils.data.DataLoader,
     num_classes: int,
     class_means: torch.Tensor,
+    device: str,
 ) -> np.ndarray:
+    model = model.to(device)
     model.eval()
 
     all_scores = []
@@ -18,12 +37,12 @@ def LAFO_cache(
 
     with torch.inference_mode():
         for feats_batch_initial, logits_batch_initial in test_loader:
-            feats_batch_initial = feats_batch_initial.cuda()
-            logits_batch_initial = logits_batch_initial.cuda()
+            feats_batch_initial = feats_batch_initial.to(device)
+            logits_batch_initial = logits_batch_initial.to(device)
             preds_initial = logits_batch_initial.argmax(1)
             max_logits = logits_batch_initial.max(dim=1).values
             total_size += feats_batch_initial.size(0)
-            trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device="cuda")
+            trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device=device)
             for class_id in class_idx:
                 logit_diff = max_logits - logits_batch_initial[:, class_id]
                 weight_diff = model.fc.weight[preds_initial] - model.fc.weight[class_id]
@@ -69,12 +88,14 @@ def LAFO_cache(
     return scores
 
 
-def LAFO(
+def LAFO_no_cache(
     model: torch.nn.Module,
     test_loader: torch.utils.data.DataLoader,
     num_classes: int,
     class_means: torch.Tensor,
+    device: str,
 ) -> np.ndarray:
+    model = model.to(device)
     model.eval()
 
     all_scores = []
@@ -84,13 +105,13 @@ def LAFO(
 
     with torch.inference_mode():
         for data, _ in test_loader:
-            data = data.cuda()
+            data = data.to(device)
             feats_batch_initial = model.penult_feature(data)
             logits_batch_initial = model.fc(feats_batch_initial)
             preds_initial = logits_batch_initial.argmax(1)
             max_logits = logits_batch_initial.max(dim=1).values
             total_size += feats_batch_initial.size(0)
-            trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device="cuda")
+            trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device=device)
             for class_id in class_idx:
                 logit_diff = max_logits - logits_batch_initial[:, class_id]
                 weight_diff = model.fc.weight[preds_initial] - model.fc.weight[class_id]
@@ -141,7 +162,9 @@ def fDBD(
     test_loader: torch.utils.data.DataLoader,
     num_classes: int,
     class_means: torch.Tensor,
+    device: str,
 ) -> np.ndarray:
+    model = model.to(device)
     model.eval()
 
     all_scores = []
@@ -151,12 +174,12 @@ def fDBD(
 
     with torch.inference_mode():
         for feats_batch_initial, logits_batch_initial in test_loader:
-            feats_batch_initial = feats_batch_initial.cuda()
-            logits_batch_initial = logits_batch_initial.cuda()
+            feats_batch_initial = feats_batch_initial.to(device)
+            logits_batch_initial = logits_batch_initial.to(device)
             preds_initial = logits_batch_initial.argmax(1)
             max_logits = logits_batch_initial.max(dim=1).values
             total_size += feats_batch_initial.size(0)
-            trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device="cuda")
+            trajectory_list = torch.zeros(feats_batch_initial.size(0), num_classes, device=device)
             for class_id in class_idx:
                 logit_diff = max_logits - logits_batch_initial[:, class_id]
                 weight_diff = model.fc.weight[preds_initial] - model.fc.weight[class_id]
@@ -183,16 +206,18 @@ def knn_score(
     test_loader: torch.utils.data.DataLoader,
     num_classes: int,
     train_features: torch.Tensor,
+    device: str,
     k: int = 50,
 ) -> np.ndarray:
+    model = model.to(device)
     model.eval()
     all_scores = []
     norm_train_feats = F.normalize(train_features, p=2, dim=1)
 
     with torch.inference_mode():
         for feats_batch_initial, logits_batch_initial in test_loader:
-            feats_batch_initial = feats_batch_initial.cuda()
-            logits_batch_initial = logits_batch_initial.cuda()
+            feats_batch_initial = feats_batch_initial.to(device)
+            logits_batch_initial = logits_batch_initial.to(device)
             # normalize
             norm_feats_batch_initial = F.normalize(feats_batch_initial, p=2, dim=1)
             # calculate the distance
@@ -208,6 +233,7 @@ def knn_score(
 
 
 def get_class_means(train_loader: torch.utils.data.DataLoader, model: torch.nn.Module, device: str) -> torch.Tensor:
+    model = model.to(device)
     model.eval()
     all_features = []
     all_labels = []
