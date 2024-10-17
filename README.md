@@ -8,7 +8,7 @@
     <a href="https://black.readthedocs.io/en/stable/"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 </p>
 
-Implementation of LAFO: OOD Detection with Relative Angles
+Implementation of [LAFO: OOD Detection with Relative Angles](https://arxiv.org/abs/2410.04525)
 
 
 ## Installation
