@@ -5,7 +5,8 @@ import torch
 from omegaconf import DictConfig
 from pytorch_lightning import seed_everything
 
-from lafo.runners import cache_run, pipeline_run
+from lafo.runners.cache_runner import cache_run
+from lafo.runners.pipeline_runner import pipeline_run
 
 torch.set_float32_matmul_precision("high")
 
